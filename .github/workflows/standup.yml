@@ -1,41 +1,42 @@
 name: Daily Standup Report
 
-description: |
-  This GitHub Actions workflow runs on weekdays at 17:45 Taiwan time (UTC 09:45).
-  It clones the private work repository, extracts today's Git commit logs, and calls
-  the Dify workflow API to generate a standup report (e.g., posted to Discord).
-
 on:
   schedule:
-    - cron: '45 9 * * 1-5'  # Weekdays at 17:45 (Taiwan) => 09:45 UTC
-  workflow_dispatch:       # Optional manual trigger
+    - cron: '45 9 * * 1-5'  # 平日台灣 17:45（UTC 09:45）
+  workflow_dispatch:        # 可手動觸發
 
 jobs:
   report:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout work repo
+      - name: Checkout work repo (all branches)
         uses: actions/checkout@v4
         with:
           repository: w101-admin/W101-TalentSearchHub
           token: ${{ secrets.GH_PAT }}
+          fetch-depth: 0  # 抓取所有分支完整歷史紀錄
 
       - name: Get today's date
-        id: date
         run: echo "DATE=$(date +'%Y-%m-%d')" >> "$GITHUB_ENV"
 
-      - name: Get commit messages (today only)
+      - name: Get commit messages from all branches by YouCheng29
         id: commits
         run: |
           since="$(date +'%Y-%m-%d')T00:00:00Z"
           until="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          logs=$(git log --since="$since" --until="$until" --pretty=format:'- %s')
+
+          logs=$(git log --all --since="$since" --until="$until" --author="YouCheng29" --pretty=format:'- %s')
+
+          if [ -z "$logs" ]; then
+            logs="（今天沒有來自 YouCheng29 的 commit）"
+          fi
+
           echo "LOGS<<EOF" >> $GITHUB_ENV
           echo "$logs" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-      - name: Call Dify workflow endpoint
+      - name: Call Dify Workflow
         run: |
           curl -X POST 'http://44.243.2.205/v1/workflows/run' \
             --header 'Authorization: Bearer ${{ secrets.WORKFLOW_API_KEY }}' \
@@ -44,7 +45,7 @@ jobs:
               "inputs": {
                 "date": "'"${{ env.DATE }}"'",
                 "repo": "w101-admin/W101-TalentSearchHub",
-                "author": "github-actions",
+                "author": "YouCheng29",
                 "commit_logs": "'"${{ env.LOGS }}"'"
               },
               "response_mode": "streaming",
