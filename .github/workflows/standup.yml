@@ -42,18 +42,23 @@ jobs:
           ESCAPED=$(jq -Rs . <<< "${{ env.LOGS }}")
           echo "ESCAPED_LOGS=$ESCAPED" >> "$GITHUB_ENV"
 
-      - name: Call Dify Workflow
+      - name: Call Dify workflow endpoint
         run: |
           curl -X POST 'http://44.243.2.205/v1/workflows/run' \
             --header 'Authorization: Bearer ${{ secrets.WORKFLOW_API_KEY }}' \
             --header 'Content-Type: application/json' \
-            --data-raw '{
-              "inputs": {
-                "date": "'"${{ env.DATE }}"'",
-                "repo": "w101-admin/W101-TalentSearchHub",
-                "author": "YouCheng29",
-                "commit_logs": "'"${{ env.ESCAPED_LOGS }}"'"
-              },
-              "response_mode": "streaming",
-              "user": "yc"
-            }'
+            --data-raw "$(jq -n \
+              --arg date "$DATE" \
+              --arg repo "w101-admin/W101-TalentSearchHub" \
+              --arg author "YouCheng29" \
+              --arg commit_logs "$ESCAPED_LOGS" \
+              '{
+                inputs: {
+                  date: $date,
+                  repo: $repo,
+                  author: $author,
+                  commit_logs: $commit_logs
+                },
+                response_mode: "streaming",
+                user: "yc"
+              }')"
