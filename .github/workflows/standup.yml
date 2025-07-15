@@ -36,6 +36,12 @@ jobs:
           echo "$logs" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
+      - name: Escape commit logs to JSON-safe string
+        id: escape
+        run: |
+          ESCAPED=$(jq -Rs . <<< "${{ env.LOGS }}")
+          echo "ESCAPED_LOGS=$ESCAPED" >> "$GITHUB_ENV"
+
       - name: Call Dify Workflow
         run: |
           curl -X POST 'http://44.243.2.205/v1/workflows/run' \
@@ -46,8 +52,8 @@ jobs:
                 "date": "'"${{ env.DATE }}"'",
                 "repo": "w101-admin/W101-TalentSearchHub",
                 "author": "YouCheng29",
-                "commit_logs": "'"${{ env.LOGS }}"'"
+                "commit_logs": "'"${{ env.ESCAPED_LOGS }}"'"
               },
               "response_mode": "streaming",
-              "user": "abc-123"
+              "user": "yc"
             }'
