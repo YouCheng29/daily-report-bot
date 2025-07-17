@@ -44,7 +44,7 @@ jobs:
 
       - name: Call Dify workflow endpoint
         run: |
-          curl -X POST 'http://44.243.2.205/v1/workflows/run' \
+          curl -X POST 'http://54.188.99.119/v1/workflows/run' \
             --header 'Authorization: Bearer ${{ secrets.WORKFLOW_API_KEY }}' \
             --header 'Content-Type: application/json' \
             --data-raw "$(jq -n \
